@@ -1,7 +1,7 @@
 # Music Production Bot
 This is a Discord bot specifically designed for music production servers
 
-![Example](https://github.com/Speechrezz/ProductionBot/Resources/Example.png)
+![Example](/Resources/Example1.png)
 
 ## Features:
 - Displays waveform of sound files
