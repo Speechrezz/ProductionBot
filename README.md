@@ -1,7 +1,9 @@
 # Music Production Bot
 This is a Discord bot specifically designed for music production servers
 
-![Example](/Resources/Example1.png)
+<img src="Resources/Example1.png" alt="drawing" width="400"/>
+
+Add bot to server: [Click here](https://discord.com/api/oauth2/authorize?client_id=959708215627612162&permissions=274877918272&scope=bot)
 
 ## Features:
 - Displays waveform of sound files
