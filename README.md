@@ -1,8 +1,10 @@
 # Music Production Bot
 This is a Discord bot specifically designed for music production servers
 
+![Example](https://github.com/Speechrezz/ProductionBot/Resources/Example.png)
+
 ## Features:
-- Displaying waveform of sound files
+- Displays waveform of sound files
 
 ## How to use:
 - Create a file named `token.txt` in the same directory as the python file
