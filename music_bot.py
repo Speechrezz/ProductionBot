@@ -34,6 +34,8 @@ class MyClient(discord.Client):
         # Guild is the discord server
         guild = client.get_guild(payload.guild_id)
 
+        # TODO: Count the number of updoots
+
         #print(payload.emoji.name)
 
     async def on_raw_reaction_remove(self, payload):
@@ -41,6 +43,8 @@ class MyClient(discord.Client):
         # Guild is the discord server
         guild = client.get_guild(payload.guild_id)
         member = guild.get_member(payload.user_id)
+
+        # TODO: Subtract number of updoots
 
         #print(payload.emoji.name)
 
