@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 from pydub import AudioSegment
+import pyloudnorm as pyln
 import io
 import time
 
@@ -14,7 +15,7 @@ class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         # Call parent's init
         super().__init__(*args, **kwargs)
-        self.music_channel_names = ["sample", "production", "feedback"]
+        self.music_channel_names = ["sample", "production", "feedback", "art", "file-dump"]
         self.colours = np.array(((0.95294118, 0.48235294, 0.40784314), (0.60784314, 0.51764706, 0.9254902), (0.03529412, 0.69019608, 0.94901961)))
         self.colourIdx: int = 0
         self.token: str = None
@@ -73,13 +74,18 @@ class MyClient(discord.Client):
         song = AudioSegment.from_file(io.BytesIO(data), format=ext)
         y = np.array(song.get_array_of_samples())
         if song.channels >= 2:
-            y = y.reshape((-1, song.channels))
+            y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit unsigned integer
+
+        # measure the loudness first 
+        meter = pyln.Meter(song.frame_rate) # create BS.1770 meter
+        loudness = meter.integrated_loudness(y)
         
         # Generate graph
         amp = np.zeros(y.shape[0])
         for i in range(y.shape[1]):
             amp += y[:, i]
         amp = amp / y.shape[1]
+
         plt.figure(figsize=(8,3), facecolor=(0.21176471, 0.22352941, 0.24313725))
         plt.rcParams['xtick.color'] = "white" #(0.6, 0.66666667, 0.70980392)
         plt.plot(np.linspace(0, y.shape[0] / song.frame_rate, y.shape[0]), amp, color = self.getNextColor())
@@ -100,7 +106,7 @@ class MyClient(discord.Client):
         chart = discord.File(data_stream, filename="music-analysis.png")
 
         # Send message
-        await message.reply(file = chart, mention_author = False)
+        await message.reply(f"**Integrated Loudness:** {loudness:.2f} LUFS", file = chart, mention_author = False)
 
     def getNextColor(self):
         color = self.colours[self.colourIdx]
