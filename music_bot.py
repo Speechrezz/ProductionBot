@@ -60,6 +60,16 @@ class MyClient(discord.Client):
         if len(message.attachments) >= 1:
             if "audio" in message.attachments[0].content_type:
                 await self.music_file_sent(message)
+
+    def get_loudness_str(self, samplerate, y):
+        try:
+            # measure the loudness first 
+            meter = pyln.Meter(samplerate) # create BS.1770 meter
+            loudness = meter.integrated_loudness(y)
+        except ValueError: # is thrown if file is too short
+            return ""
+        
+        return f"**Integrated Loudness:** {loudness:.2f} LUFS"
                 
     async def music_file_sent(self, message):
         # Initialize IO
@@ -75,10 +85,6 @@ class MyClient(discord.Client):
         y = np.array(song.get_array_of_samples())
         if song.channels >= 2:
             y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit unsigned integer
-
-        # measure the loudness first 
-        meter = pyln.Meter(song.frame_rate) # create BS.1770 meter
-        loudness = meter.integrated_loudness(y)
         
         # Generate graph
         amp = np.zeros(y.shape[0])
@@ -106,7 +112,7 @@ class MyClient(discord.Client):
         chart = discord.File(data_stream, filename="music-analysis.png")
 
         # Send message
-        await message.reply(f"**Integrated Loudness:** {loudness:.2f} LUFS", file = chart, mention_author = False)
+        await message.reply(self.get_loudness_str(song.frame_rate, y), file = chart, mention_author = False)
 
     def getNextColor(self):
         color = self.colours[self.colourIdx]
