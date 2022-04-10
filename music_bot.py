@@ -95,7 +95,7 @@ class MyClient(discord.Client):
                     return f"Channel `{cmd[1]}` already exists in channels list"
                 
                 cur_channels.append(cmd[1])
-                self.settingsDB.update_id(message.guild.id, {"active_channels": cur_channels})
+                self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
                 return f"Channel `{cmd[1]}` added to active channels list"
 
         if cmd[0] == "remove_channel":
@@ -107,7 +107,7 @@ class MyClient(discord.Client):
                     return f"Channel `{cmd[1]}` does not exist in channels list"
                 
                 cur_channels.remove(cmd[1])
-                self.settingsDB.update_id(message.guild.id, {"active_channels": cur_channels})
+                self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
                 return f"Channel `{cmd[1]}` removed from active channels list"
 
         if cmd[0] == "list_channels":
