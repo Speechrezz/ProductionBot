@@ -75,6 +75,7 @@ class MyClient(discord.Client):
 
     def on_command(self, message):
         guild_id = message.guild.id
+        print("guild_id:", guild_id)
         cmd = message.content[1:].split(" ")
         if cmd[0] == "prefix":
             if len(cmd) >= 2:
