@@ -18,7 +18,6 @@ class Database:
             return data[key]
         # If does not exist, return default value
         val = self.defs[key]
-        print("defs_val:", val)
         #self.update({"_id": id}, {key: val})
         return val
 

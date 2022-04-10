@@ -75,7 +75,6 @@ class MyClient(discord.Client):
 
     def on_command(self, message):
         guild_id = message.guild.id
-        print("guild_id:", guild_id)
         cmd = message.content[1:].split(" ")
         if cmd[0] == "prefix":
             if len(cmd) >= 2:
@@ -87,8 +86,7 @@ class MyClient(discord.Client):
         
         if cmd[0] == "add_channel":
             if len(cmd) >= 2:
-                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
-                print("cur_channels:", cur_channels)
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels").copy()
 
                 # If channel already exists in list
                 if cmd[1] in cur_channels:
@@ -100,7 +98,7 @@ class MyClient(discord.Client):
 
         if cmd[0] == "remove_channel":
             if len(cmd) >= 2:
-                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels").copy()
 
                 # If channel already exists in list
                 if not cmd[1] in cur_channels:
