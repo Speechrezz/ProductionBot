@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import ticker
 from pydub import AudioSegment
 import pyloudnorm as pyln
+import database
 import io
 import time
 
@@ -16,9 +17,14 @@ class MyClient(discord.Client):
         # Call parent's init
         super().__init__(*args, **kwargs)
         self.music_channel_names = ["sample", "production", "feedback", "art", "file-dump"]
-        self.colours = np.array(((0.95294118, 0.48235294, 0.40784314), (0.60784314, 0.51764706, 0.9254902), (0.03529412, 0.69019608, 0.94901961)))
-        self.colourIdx: int = 0
+        self.colors = np.array(((0.95294118, 0.48235294, 0.40784314), 
+                                (0.60784314, 0.51764706, 0.9254902), 
+                                (0.03529412, 0.69019608, 0.94901961)))
         self.token: str = None
+        self.settingsDB = database.Database("MusicBotServers")
+        defs = {"active_channels": ["sample", "production", "feedback", "art", "file-dump"]}
+        self.settingsDB.set_defaults(defs)
+        self.colorIdxs = {}
 
     def load_token(self, fname = "token.txt"):
         with open(fname, 'r') as f:
@@ -26,6 +32,18 @@ class MyClient(discord.Client):
 
     def run(self):
         super().run(self.token)
+
+    def get_next_color(self, guild: int):
+        if guild in self.colorIdxs:
+            idx = self.colorIdxs[guild]
+            color = self.colors[idx]
+            idx += 1
+            idx = idx % self.colors.shape[0]
+            self.colorIdxs[guild] = idx
+        else:
+            color = self.colors[0]
+            self.colorIdxs[guild] = 1
+        return color
 
     async def on_ready(self):
         print("Bot has started")
@@ -53,13 +71,13 @@ class MyClient(discord.Client):
         # Checks if message came from the bot itself
         if message.author == client.user:
             return
-        if not any(ext in message.channel.name for ext in self.music_channel_names):
-            return
 
         # Checks if user sent a music file
         if len(message.attachments) >= 1:
             if "audio" in message.attachments[0].content_type:
-                await self.music_file_sent(message)
+                active_channels = self.settingsDB.read_id_key(message.guild.id, "active_channels")
+                if any(ext in message.channel.name for ext in active_channels):
+                    await self.music_file_sent(message)
 
     def get_loudness_str(self, samplerate, y):
         try:
@@ -72,6 +90,8 @@ class MyClient(discord.Client):
         return f"**Integrated Loudness:** {loudness:.2f} LUFS"
                 
     async def music_file_sent(self, message):
+        guild = message.guild.id
+
         # Initialize IO
         data_stream = io.BytesIO()
 
@@ -93,8 +113,8 @@ class MyClient(discord.Client):
         amp = amp / y.shape[1]
 
         plt.figure(figsize=(8,3), facecolor=(0.21176471, 0.22352941, 0.24313725))
-        plt.rcParams['xtick.color'] = "white" #(0.6, 0.66666667, 0.70980392)
-        plt.plot(np.linspace(0, y.shape[0] / song.frame_rate, y.shape[0]), amp, color = self.getNextColor())
+        plt.rcParams['xtick.color'] = "white"
+        plt.plot(np.linspace(0, y.shape[0] / song.frame_rate, y.shape[0]), amp, color = self.get_next_color(guild))
         ax = plt.gca()
         ax.get_yaxis().set_visible(False)
         ax.set_facecolor((0.21176471, 0.22352941, 0.24313725))
@@ -120,7 +140,7 @@ class MyClient(discord.Client):
         self.colourIdx = self.colourIdx % self.colours.shape[0]
         return color
         
-        
+
 
 # Setup intents (what our discord bot wants to do)
 intents = discord.Intents.default()
