@@ -24,9 +24,16 @@ class Database:
     def create(self, document):
         self.col.insert_one(document)
 
+    def create_id(self, id: int):
+        self.create({"_id": id})
+
     def update(self, key, value, upsert=True):
         self.col.update_one(key, {"$set": value}, upsert=upsert)
 
     def delete(self, key):
         # Todo: implement this lmao
         pass
+
+    # Check if entry with _id exists
+    def exists_id(self, id: int):
+        return self.col.count_documents({"_id": id}) >= 1

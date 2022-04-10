@@ -47,6 +47,12 @@ class MyClient(discord.Client):
         return color
 
     async def on_ready(self):
+        # Populates database if guild does not exist in it yet
+        for guild in self.guilds:
+            print(guild.name)
+            if not self.settingsDB.exists_id(guild.id):
+                self.settingsDB.create_id(guild.id)
+
         print("Bot has started")
 
     async def on_raw_reaction_add(self, payload):
