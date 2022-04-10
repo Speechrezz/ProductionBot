@@ -16,9 +16,9 @@ class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         # Call parent's init
         super().__init__(*args, **kwargs)
-        self.colors = np.array(((0.95294118, 0.48235294, 0.40784314), 
-                                (0.60784314, 0.51764706, 0.9254902), 
-                                (0.03529412, 0.69019608, 0.94901961)))
+        self.colors = np.array(((0.95294118, 0.48235294, 0.40784314),  # salmon/orange
+                                (0.60784314, 0.51764706, 0.9254902),   # indigo/purple
+                                (0.03529412, 0.69019608, 0.94901961))) # blue
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
         defs = {"active_channels": [], 
@@ -72,6 +72,14 @@ class MyClient(discord.Client):
         # TODO: Subtract number of updoots
 
         #print(payload.emoji.name)
+
+    async def on_guild_join(self, guild):
+        if not self.settingsDB.exists_id(guild.id):
+            self.settingsDB.create_id(guild.id)
+    
+    async def on_guild_remove(self, guild):
+        if self.settingsDB.exists_id(guild.id):
+            self.settingsDB.delete_id(guild.id)
 
     def on_command(self, message):
         guild_id = message.guild.id
@@ -207,7 +215,7 @@ class MyClient(discord.Client):
 
 # Setup intents (what our discord bot wants to do)
 intents = discord.Intents.default()
-intents.members = True
+intents.guilds = True
 
 # This client is our connection to discord
 client = MyClient(intents=intents)

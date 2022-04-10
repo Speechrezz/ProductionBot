@@ -37,9 +37,8 @@ class Database:
         self.col.delete_one({"_id": id})
         self.create_id(id)
 
-    def delete(self, key):
-        # Todo: implement this lmao
-        pass
+    def delete_id(self, id: int):
+        self.col.delete_one({"_id": id})
 
     # Check if entry with _id exists
     def exists_id(self, id: int):
