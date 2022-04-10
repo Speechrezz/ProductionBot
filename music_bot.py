@@ -16,13 +16,12 @@ class MyClient(discord.Client):
     def __init__(self, *args, **kwargs):
         # Call parent's init
         super().__init__(*args, **kwargs)
-        self.music_channel_names = ["sample", "production", "feedback", "art", "file-dump"]
         self.colors = np.array(((0.95294118, 0.48235294, 0.40784314), 
                                 (0.60784314, 0.51764706, 0.9254902), 
                                 (0.03529412, 0.69019608, 0.94901961)))
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
-        defs = {"active_channels": ["sample", "production", "feedback", "art", "file-dump"], 
+        defs = {"active_channels": [], 
                 "command_prefix": '!'}
         self.settingsDB.set_defaults(defs)
         self.colorIdxs = {}
@@ -74,22 +73,73 @@ class MyClient(discord.Client):
 
         #print(payload.emoji.name)
 
+    def on_command(self, message):
+        guild_id = message.guild.id
+        cmd = message.content[1:].split(" ")
+        if cmd[0] == "prefix":
+            if len(cmd) >= 2:
+                if len(cmd[1]) == 1:
+                    print(f"Prefix: {cmd[1]}")
+                    self.settingsDB.update_id(guild_id, {"command_prefix": cmd[1]})
+                    return f"Command prefixed updated to `{cmd[1]}`"
+                return "Command prefix must be a single character"
+        
+        if cmd[0] == "add_channel":
+            if len(cmd) >= 2:
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+
+                # If channel already exists in list
+                if cmd[1] in cur_channels:
+                    return f"Channel `{cmd[1]}` already exists in channels list"
+                
+                cur_channels.append(cmd[1])
+                self.settingsDB.update_id(message.guild.id, {"active_channels": cur_channels})
+                return f"Channel `{cmd[1]}` added to active channels list"
+
+        if cmd[0] == "remove_channel":
+            if len(cmd) >= 2:
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+
+                # If channel already exists in list
+                if not cmd[1] in cur_channels:
+                    return f"Channel `{cmd[1]}` does not exist in channels list"
+                
+                cur_channels.remove(cmd[1])
+                self.settingsDB.update_id(message.guild.id, {"active_channels": cur_channels})
+                return f"Channel `{cmd[1]}` removed from active channels list"
+
+        if cmd[0] == "list_channels":
+            cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+            if len(cur_channels) == 0:
+                return "All channels are active"
+            return "List of active channels: `" + ", ".join(cur_channels) + "`"
+
+        if cmd[0] == "reset":
+            self.settingsDB.reset_id(guild_id)
+            return "Production bot settings have been reset"
+
+        if cmd[0] == "help":
+            return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`"
+
+        else:
+            return "Unknown command"
+
     async def on_message(self, message):
         # Checks if message came from the bot itself
         if message.author == client.user:
             return
         
         # Checks for command
-        if len(message.content) > 0:
-            if message.content[0] == '!':
-                print("This is a command")
-                print(message.content[1:].split(" "))
+        if len(message.content) >= 2:
+            prefix = self.settingsDB.read_id_key(message.guild.id, "command_prefix")
+            if message.content[0] == prefix:
+                await message.reply(self.on_command(message), mention_author=False)
 
         # Checks if user sent a music file
         if len(message.attachments) >= 1:
             if "audio" in message.attachments[0].content_type:
                 active_channels = self.settingsDB.read_id_key(message.guild.id, "active_channels")
-                if any(ext in message.channel.name for ext in active_channels):
+                if any(ext in message.channel.name for ext in active_channels) or len(active_channels) == 0:
                     await self.music_file_sent(message)
 
     def get_loudness_str(self, samplerate, y):

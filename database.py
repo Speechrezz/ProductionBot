@@ -30,6 +30,13 @@ class Database:
     def update(self, key, value, upsert=True):
         self.col.update_one(key, {"$set": value}, upsert=upsert)
 
+    def update_id(self, id: int, value, upsert=True):
+        self.update({"_id": id}, value, upsert=upsert)
+
+    def reset_id(self, id: int):
+        self.col.delete_one({"_id": id})
+        self.create_id(id)
+
     def delete(self, key):
         # Todo: implement this lmao
         pass
