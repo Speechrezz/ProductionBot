@@ -88,6 +88,7 @@ class MyClient(discord.Client):
         if cmd[0] == "add_channel":
             if len(cmd) >= 2:
                 cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+                print("cur_channels:", cur_channels)
 
                 # If channel already exists in list
                 if cmd[1] in cur_channels:
