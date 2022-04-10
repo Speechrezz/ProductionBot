@@ -74,9 +74,10 @@ class MyClient(discord.Client):
             return
         
         # Checks for command
-        if message.content[0] == '!':
-            print("This is a command")
-            print(message.content[1:].split(" "))
+        if len(message.content > 0):
+            if message.content[0] == '!':
+                print("This is a command")
+                print(message.content[1:].split(" "))
 
         # Checks if user sent a music file
         if len(message.attachments) >= 1:
