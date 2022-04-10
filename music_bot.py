@@ -22,7 +22,8 @@ class MyClient(discord.Client):
                                 (0.03529412, 0.69019608, 0.94901961)))
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
-        defs = {"active_channels": ["sample", "production", "feedback", "art", "file-dump"]}
+        defs = {"active_channels": ["sample", "production", "feedback", "art", "file-dump"], 
+                "command_prefix": '!'}
         self.settingsDB.set_defaults(defs)
         self.colorIdxs = {}
 
@@ -71,6 +72,11 @@ class MyClient(discord.Client):
         # Checks if message came from the bot itself
         if message.author == client.user:
             return
+        
+        # Checks for command
+        if message.content[0] == '!':
+            print("This is a command")
+            print(message.content[1:].split(" "))
 
         # Checks if user sent a music file
         if len(message.attachments) >= 1:
