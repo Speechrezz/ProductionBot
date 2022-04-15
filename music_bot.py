@@ -1,12 +1,9 @@
 import discord
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib import ticker
+import helper
 from pydub import AudioSegment
-import pyloudnorm as pyln
 import database
 import io
-import time
 
 # https://discord.com/api/oauth2/authorize?client_id=959708215627612162&permissions=274877918272&scope=bot
 
@@ -149,16 +146,6 @@ class MyClient(discord.Client):
                 active_channels = self.settingsDB.read_id_key(message.guild.id, "active_channels")
                 if any(ext in message.channel.name for ext in active_channels) or len(active_channels) == 0:
                     await self.music_file_sent(message)
-
-    def get_loudness_str(self, samplerate, y):
-        try:
-            # measure the loudness first 
-            meter = pyln.Meter(samplerate) # create BS.1770 meter
-            loudness = meter.integrated_loudness(y)
-        except ValueError: # is thrown if file is too short
-            return ""
-        
-        return f"**Integrated Loudness:** {loudness:.2f} LUFS"
                 
     async def music_file_sent(self, message):
         guild = message.guild.id
@@ -173,37 +160,11 @@ class MyClient(discord.Client):
         data = await message.attachments[0].read()
         ext = message.attachments[0].filename.split(".")[-1]
         song = AudioSegment.from_file(io.BytesIO(data), format=ext)
-        y = np.array(song.get_array_of_samples())
-        if song.channels >= 2:
-            y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit unsigned integer
-        
-        # Generate graph
-        amp = np.zeros(y.shape[0])
-        for i in range(y.shape[1]):
-            amp += y[:, i]
-        amp = amp / y.shape[1]
-
-        plt.figure(figsize=(8,3), facecolor=(0.21176471, 0.22352941, 0.24313725))
-        plt.rcParams['xtick.color'] = "white"
-        plt.plot(np.linspace(0, y.shape[0] / song.frame_rate, y.shape[0]), amp, color = self.get_next_color(guild))
-        ax = plt.gca()
-        ax.get_yaxis().set_visible(False)
-        ax.set_facecolor((0.21176471, 0.22352941, 0.24313725))
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        formatter = ticker.FuncFormatter(lambda s, x: time.strftime('%M:%S', time.gmtime(s)))
-        ax.xaxis.set_major_formatter(formatter)
-
-        # Save content into the data stream
-        plt.savefig(data_stream, format='png', bbox_inches="tight", dpi = 80)
-        plt.close()
-        data_stream.seek(0)
-        chart = discord.File(data_stream, filename="music-analysis.png")
 
         # Send message
-        await message.reply(self.get_loudness_str(song.frame_rate, y), file = chart, mention_author = False)
+        y = helper.generate_waveform(song, data_stream, self.get_next_color(guild))
+        chart = discord.File(data_stream, filename="music-analysis.png")
+        await message.reply(helper.get_loudness_str(song.frame_rate, y), file = chart, mention_author = False)
 
     def getNextColor(self):
         color = self.colours[self.colourIdx]
