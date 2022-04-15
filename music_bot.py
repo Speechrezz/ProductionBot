@@ -19,7 +19,9 @@ class MyClient(discord.Client):
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
         defs = {"active_channels": [], 
-                "command_prefix": '!'}
+                "command_prefix": '!',
+                "react_emoji": '🔥',
+                "loudness_leaderboard": []}
         self.settingsDB.set_defaults(defs)
         self.colorIdxs = {}
 
@@ -78,16 +80,15 @@ class MyClient(discord.Client):
         if self.settingsDB.exists_id(guild.id):
             self.settingsDB.delete_id(guild.id)
 
-    def on_command(self, message):
+    async def on_command(self, message):
         guild_id = message.guild.id
         cmd = message.content[1:].split(" ")
         if cmd[0] == "prefix":
             if len(cmd) >= 2:
                 if len(cmd[1]) == 1:
-                    print(f"Prefix: {cmd[1]}")
                     self.settingsDB.update_id(guild_id, {"command_prefix": cmd[1]})
                     return f"Command prefixed updated to `{cmd[1]}`"
-                return "Command prefix must be a single character"
+                return "Command prefix must be a single character."
         
         if cmd[0] == "add_channel":
             if len(cmd) >= 2:
@@ -95,11 +96,11 @@ class MyClient(discord.Client):
 
                 # If channel already exists in list
                 if cmd[1] in cur_channels:
-                    return f"Channel `{cmd[1]}` already exists in channels list"
+                    return f"Channel `{cmd[1]}` already exists in channels list."
                 
                 cur_channels.append(cmd[1])
                 self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
-                return f"Channel `{cmd[1]}` added to active channels list"
+                return f"Channel `{cmd[1]}` added to active channels list."
 
         if cmd[0] == "remove_channel":
             if len(cmd) >= 2:
@@ -107,27 +108,39 @@ class MyClient(discord.Client):
 
                 # If channel already exists in list
                 if not cmd[1] in cur_channels:
-                    return f"Channel `{cmd[1]}` does not exist in channels list"
+                    return f"Channel `{cmd[1]}` does not exist in channels list."
                 
                 cur_channels.remove(cmd[1])
                 self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
-                return f"Channel `{cmd[1]}` removed from active channels list"
+                return f"Channel `{cmd[1]}` removed from active channels list."
 
         if cmd[0] == "list_channels":
             cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
             if len(cur_channels) == 0:
-                return "All channels are active"
+                return "All channels are active."
             return "List of active channels: `" + ", ".join(cur_channels) + "`"
 
         if cmd[0] == "reset":
             self.settingsDB.reset_id(guild_id)
-            return "Production bot settings have been reset"
+            return "Production bot settings have been reset."
 
         if cmd[0] == "help":
             return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`"
+        
+        if cmd[0] == "debug":
+            # check if message is a reply
+            if message.reference is not None and not message.is_system():
+                msg_id = message.reference.message_id
+                msg = await message.channel.fetch_message(msg_id)
+                if len(msg.attachments) >= 1 and "audio" in msg.attachments[0].content_type:
+                    active_channels = self.settingsDB.read_id_key(msg.guild.id, "active_channels")
+                    if any(ext in msg.channel.name for ext in active_channels) or len(active_channels) == 0:
+                        await self.music_file_sent(msg, True)
+                        return None
+            return "Debug Mode - Reply to a message with a sound file with the `debug` command."
 
         else:
-            return "Unknown command"
+            return None
 
     async def on_message(self, message):
         # Checks if message came from the bot itself
@@ -138,7 +151,9 @@ class MyClient(discord.Client):
         if len(message.content) >= 2:
             prefix = self.settingsDB.read_id_key(message.guild.id, "command_prefix")
             if message.content[0] == prefix:
-                await message.reply(self.on_command(message), mention_author=False)
+                cmd = await self.on_command(message)
+                if cmd is not None:
+                    await message.reply(cmd, mention_author=False)
 
         # Checks if user sent a music file
         if len(message.attachments) >= 1:
@@ -147,7 +162,7 @@ class MyClient(discord.Client):
                 if any(ext in message.channel.name for ext in active_channels) or len(active_channels) == 0:
                     await self.music_file_sent(message)
                 
-    async def music_file_sent(self, message):
+    async def music_file_sent(self, message, debug = False):
         guild = message.guild.id
 
         # Initialize IO
@@ -162,9 +177,9 @@ class MyClient(discord.Client):
         song = AudioSegment.from_file(io.BytesIO(data), format=ext)
 
         # Send message
-        y = helper.generate_waveform(song, data_stream, self.get_next_color(guild))
+        y = helper.generate_waveform(song, data_stream, self.get_next_color(guild), debug)
         chart = discord.File(data_stream, filename="music-analysis.png")
-        await message.reply(helper.get_loudness_str(song.frame_rate, y), file = chart, mention_author = False)
+        await message.reply(helper.get_loudness_str(song.frame_rate, y, debug), file = chart, mention_author = False)
 
     def getNextColor(self):
         color = self.colours[self.colourIdx]

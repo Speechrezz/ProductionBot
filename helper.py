@@ -7,7 +7,7 @@ import numpy as np
 import time
 import pyloudnorm as pyln
 
-def generate_waveform(song, data_stream, color="blue"):
+def generate_waveform(song, data_stream, color="blue", debug = False):
     y = np.array(song.get_array_of_samples())
     if song.channels >= 2:
         y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit unsigned integer
@@ -20,9 +20,10 @@ def generate_waveform(song, data_stream, color="blue"):
 
     plt.figure(figsize=(8,3), facecolor=(0.21176471, 0.22352941, 0.24313725))
     plt.rcParams['xtick.color'] = "white"
+    plt.rcParams['ytick.color'] = "white"
     plt.plot(np.linspace(0, y.shape[0] / song.frame_rate, y.shape[0]), amp, color = color)
     ax = plt.gca()
-    ax.get_yaxis().set_visible(False)
+    ax.get_yaxis().set_visible(debug)
     ax.set_facecolor((0.21176471, 0.22352941, 0.24313725))
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -37,12 +38,16 @@ def generate_waveform(song, data_stream, color="blue"):
     data_stream.seek(0)
     return y
 
-def get_loudness_str(samplerate, y):
+def get_loudness_str(samplerate, y, debug = False):
+    max_loudness = np.max(y)
     try:
         # measure the loudness first 
         meter = pyln.Meter(samplerate) # create BS.1770 meter
         loudness = meter.integrated_loudness(y)
     except ValueError: # is thrown if file is too short
+        if debug:
+            return max_loudness
         return ""
-    
+    if debug:
+        return f"{loudness:.2f} LUFS, {max_loudness:.2f} max amplitude"
     return f"**Integrated Loudness:** {loudness:.2f} LUFS"
