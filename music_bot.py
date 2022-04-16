@@ -15,7 +15,7 @@ class MyClient(discord.Client):
         super().__init__(*args, **kwargs)
         self.colors = np.array(((0.95294118, 0.48235294, 0.40784314),  # salmon/orange
                                 (0.60784314, 0.51764706, 0.9254902),   # indigo/purple
-                                (0.03529412, 0.69019608, 0.94901961))) # blue
+                                (0.03529412, 0.69019608, 0.94901961))) # aqua/blue
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
         defs = {"active_channels": [], 
@@ -24,6 +24,7 @@ class MyClient(discord.Client):
                 "loudness_leaderboard": []}
         self.settingsDB.set_defaults(defs)
         self.colorIdxs = {}
+        self.leaderboard_size: int = 10
 
     def load_token(self, fname = "token.txt"):
         with open(fname, 'r') as f:
@@ -138,6 +139,9 @@ class MyClient(discord.Client):
                         await self.music_file_sent(msg, True)
                         return None
             return "Debug Mode - Reply to a message with a sound file with the `debug` command."
+
+        if cmd[0] == "leaderboard":
+            return f"Leadboard: {self.settingsDB.read_id_key(guild_id, 'loudness_leaderboard')}"
 
         else:
             return None

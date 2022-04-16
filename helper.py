@@ -10,13 +10,17 @@ import pyloudnorm as pyln
 def generate_waveform(song, data_stream, color="blue", debug = False):
     y = np.array(song.get_array_of_samples())
     if song.channels >= 2:
+        # stereo
         y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit signed integer
     
-    # Generate graph
-    amp = np.zeros(y.shape[0])
-    for i in range(y.shape[1]):
-        amp += y[:, i]
-    amp = amp / y.shape[1]
+        # Generate graph
+        amp = np.zeros(y.shape[0])
+        for i in range(y.shape[1]):
+            amp += y[:, i]
+        amp = amp / y.shape[1]
+    else:
+        # mono
+        amp = y = y / 32767
 
     plt.figure(figsize=(8,3), facecolor=(0.21176471, 0.22352941, 0.24313725))
     plt.rcParams['xtick.color'] = "white"
