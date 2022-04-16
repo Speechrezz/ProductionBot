@@ -10,7 +10,7 @@ import pyloudnorm as pyln
 def generate_waveform(song, data_stream, color="blue", debug = False):
     y = np.array(song.get_array_of_samples())
     if song.channels >= 2:
-        y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit unsigned integer
+        y = y.reshape((-1, song.channels)) / 32767 # max value of a 16-bit signed integer
     
     # Generate graph
     amp = np.zeros(y.shape[0])

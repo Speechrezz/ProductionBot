@@ -175,6 +175,7 @@ class MyClient(discord.Client):
         data = await message.attachments[0].read()
         ext = message.attachments[0].filename.split(".")[-1]
         song = AudioSegment.from_file(io.BytesIO(data), format=ext)
+        song = song.set_sample_width(2) # Ensures samples are always 16-bit
 
         # Send message
         y = helper.generate_waveform(song, data_stream, self.get_next_color(guild), debug)
