@@ -18,11 +18,11 @@ class MyClient(discord.Client):
                                 (0.03529412, 0.69019608, 0.94901961))) # aqua/blue
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
-        defs = {"active_channels": [], 
+        self.defs = {"active_channels": [], 
                 "command_prefix": '!',
                 "react_emoji": '🔥',
                 "loudness_leaderboard": []}
-        self.settingsDB.set_defaults(defs)
+        self.settingsDB.set_defaults(self.defs)
         self.colorIdxs = {}
         self.leaderboard_size: int = 10
 
@@ -122,8 +122,17 @@ class MyClient(discord.Client):
             return "List of active channels: `" + ", ".join(cur_channels) + "`"
 
         if cmd[0] == "reset":
-            self.settingsDB.reset_id(guild_id)
-            return "Production bot settings have been reset."
+            if len(cmd) <= 1:
+                return "Please specify what you would like to reset (`prefix`, `leaderboard` or `all`)."
+            if cmd[1] == "all":
+                self.settingsDB.reset_id(guild_id)
+                return "All settings have been reset."
+            if cmd[1] == "leaderboard":
+                self.settingsDB.delete_key(guild_id, "loudness_leaderboard")
+                return "Leaderboard has been reset."
+            if cmd[1] == "prefix":
+                self.settingsDB.delete_key(guild_id, "command_prefix")
+                return "Command prefix has been reset."
 
         if cmd[0] == "help":
             return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`"

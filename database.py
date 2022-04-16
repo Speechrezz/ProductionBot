@@ -40,6 +40,9 @@ class Database:
     def delete_id(self, id: int):
         self.col.delete_one({"_id": id})
 
+    def delete_key(self, id: int, key):
+        self.col.update_one({"_id": id}, {"$unset": {key: ""}})
+
     # Check if entry with _id exists
     def exists_id(self, id: int):
         return self.col.count_documents({"_id": id}) >= 1
