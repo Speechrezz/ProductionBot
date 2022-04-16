@@ -151,7 +151,10 @@ class MyClient(discord.Client):
 
         if cmd[0] == "leaderboard":
             output = ""
-            for i, leader in enumerate(self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")):
+            guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
+            if len(guild_leaderboard) == 0:
+                return "Leaderboard is empty. Send a message with a sound file to populate the leaderboard."
+            for i, leader in enumerate(guild_leaderboard):
                 name = await self.fetch_user(leader[0])
                 output += f"#{i+1} - {name}: {leader[1]:.2f} LUFS\n"
 
@@ -199,13 +202,16 @@ class MyClient(discord.Client):
                 self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
                 return
             return # User's loudness is lower than previous loudness
+            
         # If user is not in the leaderboard
         new_element = (user_id, loudness, msg_id)
         guild_leaderboard.append(new_element)
         guild_leaderboard.sort(key=lambda x: x[1], reverse=True)
+
+        # If leaderboard is too long
+        if len(guild_leaderboard) > self.leaderboard_size:
+            guild_leaderboard = guild_leaderboard[:self.leaderboard_size]
         self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
-        if debug:
-            return f"{user_id} - {loudness}"
                 
     async def music_file_sent(self, message, debug = False):
         guild = message.guild.id
