@@ -10,13 +10,15 @@ This is a Discord bot specifically designed for music production servers.
 - Displays waveform of sound files.
 - Calculates loudness (in LUFS) of sound files.
 - Server dependent settings (type `!help` for commands).
+- Keeps track of loudest audio files sent via a leaderboard (type `!leaderboard`)
 
 ## How to use:
 - By default, the bot will analyze sound files sent in any text channel. 
 - To limit the bot to work in only specific text channels, use the `!add_channel [channel name]`
 
 ## To-do:
-- Add scoreboards of who has the most upvoted tracks and/or who has the loudest tracks.
+- Audio processing commands, such as `!nightcore`
+- Enforce users to give feedback to other's tracks before posting their own.
 - Make it look nicer.
 
 ## How to contribute:

@@ -135,7 +135,7 @@ class MyClient(discord.Client):
                 return "Command prefix has been reset."
 
         if cmd[0] == "help":
-            return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`"
+            return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`, `leaderboard`"
         
         if cmd[0] == "debug":
             # check if message is a reply
@@ -202,7 +202,7 @@ class MyClient(discord.Client):
                 self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
                 return
             return # User's loudness is lower than previous loudness
-            
+
         # If user is not in the leaderboard
         new_element = (user_id, loudness, msg_id)
         guild_leaderboard.append(new_element)
