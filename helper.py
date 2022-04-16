@@ -42,16 +42,20 @@ def generate_waveform(song, data_stream, color="blue", debug = False):
     data_stream.seek(0)
     return y
 
-def get_loudness_str(samplerate, y, debug = False):
-    max_loudness = np.max(y)
+def get_loudness(samplerate, y):
     try:
         # measure the loudness first 
         meter = pyln.Meter(samplerate) # create BS.1770 meter
         loudness = meter.integrated_loudness(y)
     except ValueError: # is thrown if file is too short
-        if debug:
-            return max_loudness
-        return ""
+        return None
+    return loudness
+
+def get_loudness_str(loudness, y, debug = False):
+    max_loudness = np.max(y)
+    output = ""
+    if loudness is not None:
+        output = f"**Integrated Loudness:** {loudness:.2f} LUFS"
     if debug:
-        return f"{loudness:.2f} LUFS, {max_loudness:.2f} max amplitude"
-    return f"**Integrated Loudness:** {loudness:.2f} LUFS"
+        output += f", {max_loudness:.2f} max amplitude"
+    return output

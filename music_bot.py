@@ -141,7 +141,12 @@ class MyClient(discord.Client):
             return "Debug Mode - Reply to a message with a sound file with the `debug` command."
 
         if cmd[0] == "leaderboard":
-            return f"Leadboard: {self.settingsDB.read_id_key(guild_id, 'loudness_leaderboard')}"
+            output = ""
+            for i, leader in enumerate(self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")):
+                name = await self.fetch_user(leader[0])
+                output += f"#{i+1} - {name}: {leader[1]:.2f}\n"
+
+            return output
 
         else:
             return None
@@ -165,6 +170,23 @@ class MyClient(discord.Client):
                 active_channels = self.settingsDB.read_id_key(message.guild.id, "active_channels")
                 if any(ext in message.channel.name for ext in active_channels) or len(active_channels) == 0:
                     await self.music_file_sent(message)
+
+    async def update_leaderboard(self, message, loudness, debug=False):
+        guild_id = message.guild.id
+        user_id = message.author.id
+        msg_id = message.jump_url
+        guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
+        if any(user_id in sl for sl in guild_leaderboard):
+            print("track already exists in leaderboard")
+            return
+        new_element = (user_id, loudness, msg_id)
+        guild_leaderboard.append(new_element)
+        guild_leaderboard.sort(key=lambda x: x[1], reverse=True)
+        print("Guild Leaderboard:", guild_leaderboard)
+        self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
+        print(f"{user_id} - {loudness}")
+        if debug:
+            return f"{user_id} - {loudness}"
                 
     async def music_file_sent(self, message, debug = False):
         guild = message.guild.id
@@ -184,7 +206,9 @@ class MyClient(discord.Client):
         # Send message
         y = helper.generate_waveform(song, data_stream, self.get_next_color(guild), debug)
         chart = discord.File(data_stream, filename="music-analysis.png")
-        await message.reply(helper.get_loudness_str(song.frame_rate, y, debug), file = chart, mention_author = False)
+        loudness = helper.get_loudness(song.frame_rate, y)
+        await self.update_leaderboard(message, loudness, debug)
+        await message.reply(helper.get_loudness_str(loudness, y, debug), file = chart, mention_author = False)
 
     def getNextColor(self):
         color = self.colours[self.colourIdx]
