@@ -199,6 +199,7 @@ class MyClient(discord.Client):
             # If user's loudness is higher than previous loudness
             if loudness > previous_loudness:
                 guild_leaderboard[position] = [user_id, loudness, msg_id]
+                guild_leaderboard.sort(key=lambda x: x[1], reverse=True)
                 self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
                 return
             return # User's loudness is lower than previous loudness
