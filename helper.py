@@ -59,3 +59,9 @@ def get_loudness_str(loudness, y, debug = False):
     if debug:
         output += f", {max_loudness:.2f} max amplitude"
     return output
+
+def find_in_list_of_list(mylist, val):
+    for i, sub_list in enumerate(mylist):
+        if val in sub_list:
+            return i
+    return None

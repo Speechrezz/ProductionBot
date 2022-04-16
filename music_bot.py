@@ -144,7 +144,7 @@ class MyClient(discord.Client):
             output = ""
             for i, leader in enumerate(self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")):
                 name = await self.fetch_user(leader[0])
-                output += f"#{i+1} - {name}: {leader[1]:.2f}\n"
+                output += f"#{i+1} - {name}: {leader[1]:.2f} LUFS\n"
 
             return output
 
@@ -172,19 +172,29 @@ class MyClient(discord.Client):
                     await self.music_file_sent(message)
 
     async def update_leaderboard(self, message, loudness, debug=False):
+        if debug:
+            return
+        # Updates leaderboard
         guild_id = message.guild.id
         user_id = message.author.id
         msg_id = message.jump_url
         guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
-        if any(user_id in sl for sl in guild_leaderboard):
-            print("track already exists in leaderboard")
-            return
+
+        position = helper.find_in_list_of_list(guild_leaderboard, user_id)
+        # If user is already in the leaderboard
+        if position is not None:
+            previous_loudness = guild_leaderboard[position][1]
+            # If user's loudness is higher than previous loudness
+            if loudness > previous_loudness:
+                guild_leaderboard[position] = [user_id, loudness, msg_id]
+                self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
+                return
+            return # User's loudness is lower than previous loudness
+        # If user is not in the leaderboard
         new_element = (user_id, loudness, msg_id)
         guild_leaderboard.append(new_element)
         guild_leaderboard.sort(key=lambda x: x[1], reverse=True)
-        print("Guild Leaderboard:", guild_leaderboard)
         self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
-        print(f"{user_id} - {loudness}")
         if debug:
             return f"{user_id} - {loudness}"
                 
