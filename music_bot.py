@@ -190,7 +190,7 @@ class MyClient(discord.Client):
         guild_id = message.guild.id
         user_id = message.author.id
         msg_id = message.jump_url
-        guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
+        guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard").copy()
 
         position = helper.find_in_list_of_list(guild_leaderboard, user_id)
         # If user is already in the leaderboard
