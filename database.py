@@ -1,4 +1,5 @@
 import pymongo
+from copy import deepcopy
 
 class Database:
     def __init__(self, collection: str):
@@ -18,7 +19,7 @@ class Database:
             return data[key]
         # If does not exist, return default value
         # Need to copy the default value, otherwise it will be overwritten
-        val = self.defs[key].copy()
+        val = deepcopy(self.defs[key])
         return val
 
     def create(self, document):
