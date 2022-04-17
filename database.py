@@ -17,8 +17,8 @@ class Database:
         if key in data:
             return data[key]
         # If does not exist, return default value
-        val = self.defs[key]
-        #self.update({"_id": id}, {key: val})
+        # Need to copy the default value, otherwise it will be overwritten
+        val = self.defs[key].copy()
         return val
 
     def create(self, document):

@@ -93,7 +93,7 @@ class MyClient(discord.Client):
         
         if cmd[0] == "add_channel":
             if len(cmd) >= 2:
-                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels").copy()
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
 
                 # If channel already exists in list
                 if cmd[1] in cur_channels:
@@ -105,7 +105,7 @@ class MyClient(discord.Client):
 
         if cmd[0] == "remove_channel":
             if len(cmd) >= 2:
-                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels").copy()
+                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
 
                 # If channel already exists in list
                 if not cmd[1] in cur_channels:
@@ -190,7 +190,7 @@ class MyClient(discord.Client):
         guild_id = message.guild.id
         user_id = message.author.id
         msg_id = message.jump_url
-        guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard").copy()
+        guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
 
         position = helper.find_in_list_of_list(guild_leaderboard, user_id)
         # If user is already in the leaderboard
