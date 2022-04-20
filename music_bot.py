@@ -18,11 +18,11 @@ class MyClient(discord.Client):
                                 (0.03529412, 0.69019608, 0.94901961))) # aqua/blue
         self.token: str = None
         self.settingsDB = database.Database("MusicBotServers")
-        self.defs = {"active_channels": [], 
+        defaults = {"active_channels": [], 
                 "command_prefix": '!',
                 "react_emoji": '🔥',
                 "loudness_leaderboard": []}
-        self.settingsDB.set_defaults(self.defs)
+        self.settingsDB.set_defaults(defaults)
         self.colorIdxs = {}
         self.leaderboard_size: int = 10
 
@@ -90,36 +90,45 @@ class MyClient(discord.Client):
                     self.settingsDB.update_id(guild_id, {"command_prefix": cmd[1]})
                     return f"Command prefixed updated to `{cmd[1]}`"
                 return "Command prefix must be a single character."
+
+        # ADD CHANNEL
         
-        if cmd[0] == "add_channel":
-            if len(cmd) >= 2:
+        if cmd[0] == "channel":
+            if len(cmd) == 1:
+                return "Usage: `!channel <option>`\nOptions: `add`, `remove`, `list`, `reset`"
+            if cmd[1] == "add":
+                if len(cmd) == 2:
+                    return "Usage: `!channel add <channel name>`"
+                if len(cmd) == 3:
+                    cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+                    if cmd[2] in cur_channels:
+                        return f"Channel `{cmd[2]}` already exists."
+                    
+                    cur_channels.append(cmd[2])
+                    self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
+                    return f"Channel `{cmd[2]}` added."
+            
+            if cmd[1] == "remove":
+                if len(cmd) == 2:
+                    return "Usage: `!channel remove <channel name>`"
+                if len(cmd) == 3:
+                    cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+                    if cmd[2] not in cur_channels:
+                        return f"Channel `{cmd[2]}` does not exist."
+                    
+                    cur_channels.remove(cmd[2])
+                    self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
+                    return f"Channel `{cmd[2]}` removed."
+            
+            if cmd[1] == "list":
                 cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
+                if len(cur_channels) == 0:
+                    return "No active channels."
+                return f"Active channels: {', '.join(cur_channels)}"
 
-                # If channel already exists in list
-                if cmd[1] in cur_channels:
-                    return f"Channel `{cmd[1]}` already exists in channels list."
-                
-                cur_channels.append(cmd[1])
-                self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
-                return f"Channel `{cmd[1]}` added to active channels list."
-
-        if cmd[0] == "remove_channel":
-            if len(cmd) >= 2:
-                cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
-
-                # If channel already exists in list
-                if not cmd[1] in cur_channels:
-                    return f"Channel `{cmd[1]}` does not exist in channels list."
-                
-                cur_channels.remove(cmd[1])
-                self.settingsDB.update_id(guild_id, {"active_channels": cur_channels})
-                return f"Channel `{cmd[1]}` removed from active channels list."
-
-        if cmd[0] == "list_channels":
-            cur_channels = self.settingsDB.read_id_key(guild_id, "active_channels")
-            if len(cur_channels) == 0:
-                return "All channels are active."
-            return "List of active channels: `" + ", ".join(cur_channels) + "`"
+            if cmd[1] == "reset":
+                self.settingsDB.update_id(guild_id, {"active_channels": []})
+                return "All channels removed."
 
         if cmd[0] == "reset":
             if len(cmd) <= 1:
@@ -135,7 +144,7 @@ class MyClient(discord.Client):
                 return "Command prefix has been reset."
 
         if cmd[0] == "help":
-            return "Help command: `prefix, add_channel, remove_channel, list_channels, reset`, `leaderboard`"
+            return "Avaliable commands: `prefix, `channel`, reset`, `leaderboard`"
         
         if cmd[0] == "debug":
             # check if message is a reply
@@ -242,13 +251,14 @@ class MyClient(discord.Client):
         self.colourIdx = self.colourIdx % self.colours.shape[0]
         return color
         
+if __name__ == "__main__":
 
+    # Setup intents (what our discord bot wants to do)
+    intents = discord.Intents.default()
+    intents.guilds = True
+    intents.members = True
 
-# Setup intents (what our discord bot wants to do)
-intents = discord.Intents.default()
-intents.guilds = True
-
-# This client is our connection to discord
-client = MyClient(intents=intents)
-client.load_token()
-client.run()
+    # This client is our connection to discord
+    client = MyClient(intents=intents)
+    client.load_token()
+    client.run()
