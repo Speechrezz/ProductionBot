@@ -159,16 +159,25 @@ class MyClient(discord.Client):
             return "Debug Mode - Reply to a message with a sound file with the `debug` command."
 
         if cmd[0] == "leaderboard":
-            output = ""
-            guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
-            if len(guild_leaderboard) == 0:
-                return "Leaderboard is empty. Send a message with a sound file to populate the leaderboard."
-            for i, leader in enumerate(guild_leaderboard):
-                name = await self.fetch_user(leader[0])
-                output += f"#{i+1} - {name}: {leader[1]:.2f} LUFS\n"
-
-            return output
-
+            # List out loudness leaderboard
+            if len(cmd) == 1:
+                output = ""
+                guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
+                if len(guild_leaderboard) == 0:
+                    return "Leaderboard is empty. Send a message with a sound file to populate the leaderboard."
+                for i, leader in enumerate(guild_leaderboard):
+                    name = await self.fetch_user(leader[0])
+                    output += f"#{i+1} - {name}: {leader[1]:.2f} LUFS\n"
+                return output
+            
+            if len(cmd) >= 2:
+                if cmd[1].isnumeric():
+                    pos = int(cmd[1])
+                    guild_leaderboard = self.settingsDB.read_id_key(guild_id, "loudness_leaderboard")
+                    if pos > len(guild_leaderboard):
+                        return "Leaderboard does not have that many entries."
+                    output = f"#{pos} - {guild_leaderboard[pos-1][2]}"
+                    return output
         else:
             return None
 
@@ -192,6 +201,7 @@ class MyClient(discord.Client):
                 if any(ext in message.channel.name for ext in active_channels) or len(active_channels) == 0:
                     await self.music_file_sent(message)
 
+    # Updates/adds a user to the leaderboard
     async def update_leaderboard(self, message, loudness, debug=False):
         if debug:
             return
@@ -222,7 +232,8 @@ class MyClient(discord.Client):
         if len(guild_leaderboard) > self.leaderboard_size:
             guild_leaderboard = guild_leaderboard[:self.leaderboard_size]
         self.settingsDB.update_id(guild_id, {"loudness_leaderboard": guild_leaderboard})
-                
+
+    # Analyzes music file
     async def music_file_sent(self, message, debug = False):
         guild = message.guild.id
 
