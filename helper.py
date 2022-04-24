@@ -35,6 +35,7 @@ def generate_waveform(song, data_stream, color="blue", debug = False):
     ax.spines['left'].set_visible(False)
     formatter = ticker.FuncFormatter(lambda s, x: time.strftime('%M:%S', time.gmtime(s)))
     ax.xaxis.set_major_formatter(formatter)
+    plt.ylim = [-1, 1]
 
     # Save content into the data stream
     plt.savefig(data_stream, format='png', bbox_inches="tight", dpi = 100)
